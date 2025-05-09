@@ -5,6 +5,16 @@ const catchAsync = require('../utils/catchAsync');
 const User = require('../models/User');
 const Review = require('../models/Review');
 
+// New controller function to get all services
+exports.getAllServices = catchAsync(async (req, res, next) => {
+  const services = await Service.find().populate('provider', 'name email'); // Populate provider details
+
+  res.status(200).json({
+    status: 'success',
+    results: services.length,
+    data: services
+  });
+});
 
 exports.getAllParentServices = catchAsync(async (req, res, next) => {
   const parentServices = await Service.aggregate([
@@ -211,4 +221,3 @@ exports.submitReview = catchAsync(async (req, res, next) => {
     message: 'Review submitted successfully'
   });
 });
-

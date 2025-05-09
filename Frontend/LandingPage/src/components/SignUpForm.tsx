@@ -64,16 +64,39 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ role, onBack, onClose }) => {
             service: formData.service,
             experience: formData.experience,
             tradeLicense: formData.tradeLicense,
+            location_latitude: formData.location_latitude,
+            location_longitude: formData.location_longitude,
           }),
         });
 
         console.log('Registration successful:', response.data);
 
-      // Assuming the backend returns user data on successful signup
-      const userData = {
-        ...response.data.user, // Use user data from the backend response
-        type: (role === 'serviceProvider' ? 'serviceprovider' : 'customer') as 'customer' | 'serviceprovider' // Ensure type is correct for context
+      // Assuming the backend returns user data on successful signup.
+      // We'll merge form data for provider-specific fields to ensure they are in the context immediately.
+      const backendUser = response.data.user; 
+      // Assuming backend registration response might also include an accessToken at response.data.accessToken
+      const accessToken = response.data.accessToken; 
+
+      let userData = { 
+        ...backendUser, 
+        name: formData.name, 
+        email: formData.email, 
+        phone_number: formData.phone_number, 
+        address: formData.address, 
+        type: (role === 'serviceProvider' ? 'serviceprovider' : 'customer') as 'customer' | 'serviceprovider',
+        ...(accessToken && { accessToken: accessToken }) // Add accessToken if present in response
       };
+
+      if (role === 'serviceProvider') { // Add/override provider-specific fields
+        userData = {
+          ...userData,
+          // 'name' is already taken from formData.name above, suitable for business name.
+          service: formData.service,
+          experience: formData.experience,
+          tradeLicense: formData.tradeLicense,
+        };
+      }
+      // No 'else' block is needed here as common fields are already set from formData.
 
       // Set user in context (which also saves to localStorage)
       setUser(userData);
@@ -93,15 +116,20 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ role, onBack, onClose }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-lg p-8 space-y-6 transform transition-all">
-        <h2 className="text-2xl font-semibold text-center mb-4 text-emerald-600">
-          {role === 'serviceProvider' ? 'Service Provider Sign Up' : 'Customer Sign Up'}
-        </h2>
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"> {/* Added z-50 to ensure it's on top */}
+      <div className="bg-white rounded-lg shadow-xl w-full max-w-lg transform transition-all max-h-[90vh] flex flex-col"> {/* Added max-h and flex structure */}
+        <div className="p-6 sm:p-8 border-b border-gray-200"> {/* Header section */}
+          <h2 className="text-2xl font-semibold text-center text-emerald-600">
+            {role === 'serviceProvider' ? 'Service Provider Sign Up' : 'Customer Sign Up'}
+          </h2>
+        </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Name */}
-          <div className="flex items-center border border-gray-300 rounded-lg px-4 py-3 focus-within:ring-2 focus-within:ring-emerald-600 transition-all">
+        <div className="p-6 sm:p-8 space-y-6 overflow-y-auto"> {/* Scrollable content area */}
+          {/* Removed duplicated h2 and form tags that were here */}
+          {/* The form starts below, within this scrollable div */}
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Name */}
+            <div className="flex items-center border border-gray-300 rounded-lg px-4 py-3 focus-within:ring-2 focus-within:ring-emerald-600 transition-all">
             <User className="w-6 h-6 text-gray-600" />
             <input
               type="text"
@@ -167,6 +195,12 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ role, onBack, onClose }) => {
                   <option value="Plumbing">Plumbing</option>
                   <option value="Electrical">Electrical</option>
                   <option value="Carpentry">Carpentry</option>
+                  <option value="Bridal Makeup">Bridal Makeup</option>
+                  <option value="Facial Treatment">Facial Treatment</option>
+                  <option value="Haircut & Styling">Haircut & Styling</option>
+                  <option value="Home Cleaning">Home Cleaning</option>
+                  <option value="Manicure & Pedicure">Manicure & Pedicure</option>
+                  <option value="Math Tutoring">Math Tutoring</option>
                 </select>
               </div>
 
@@ -193,8 +227,50 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ role, onBack, onClose }) => {
                   className="w-full pl-3 text-gray-700 focus:outline-none"
                 />
               </div>
+
+              {/* Location Fields for Service Provider */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label htmlFor="location_latitude" className="block text-sm font-medium text-gray-700 mb-1">Latitude</label>
+                  <input
+                    type="text"
+                    name="location_latitude"
+                    id="location_latitude"
+                    placeholder="e.g., 22.5726"
+                    value={formData.location_latitude}
+                    onChange={handleChange}
+                    className="w-full pl-3 pr-3 py-3 text-gray-700 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-600 transition-all"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="location_longitude" className="block text-sm font-medium text-gray-700 mb-1">Longitude</label>
+                  <input
+                    type="text"
+                    name="location_longitude"
+                    id="location_longitude"
+                    placeholder="e.g., 88.3639"
+                    value={formData.location_longitude}
+                    onChange={handleChange}
+                    className="w-full pl-3 pr-3 py-3 text-gray-700 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-600 transition-all"
+                  />
+                </div>
+              </div>
             </>
           )}
+
+          {/* Address Field (Common to both roles) */}
+          <div className="flex items-center border border-gray-300 rounded-lg px-4 py-3 focus-within:ring-2 focus-within:ring-emerald-600 transition-all">
+            <User className="w-6 h-6 text-gray-600" /> {/* Using User icon as a generic placeholder, consider a location icon */}
+            <input
+              type="text"
+              name="address"
+              placeholder="Address"
+              value={formData.address}
+              onChange={handleChange}
+              className="w-full pl-3 text-gray-700 focus:outline-none"
+              required // Make address required
+            />
+          </div>
 
           {/* Buttons */}
           <div className="flex justify-between items-center space-x-4">
@@ -213,13 +289,16 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ role, onBack, onClose }) => {
             </button>
           </div>
         </form>
-
-        <button
-          onClick={onClose}
-          className="w-full bg-gray-200 text-gray-700 py-2 rounded-lg hover:bg-gray-300 transition-colors mt-4"
-        >
-          Close
-        </button>
+        </div>
+        
+        <div className="p-6 sm:p-8 border-t border-gray-200 mt-auto"> {/* Footer section, mt-auto pushes to bottom */}
+          <button
+            onClick={onClose}
+            className="w-full bg-gray-200 text-gray-700 py-2.5 rounded-lg hover:bg-gray-300 transition-colors font-medium"
+          >
+            Close
+          </button>
+        </div>
       </div>
     </div>
   );

@@ -18,6 +18,12 @@ exports.authenticate = catchAsync(async (req, res, next) => {
     return next(new AppError('You are not logged in! Please log in to get access.', 401));
   }
 
+  // Check the basic format of the token
+  if (typeof token !== 'string' || token.split('.').length !== 3) {
+    console.error('Malformed token received by server:', token); 
+    return next(new AppError('Format of the authentication token is invalid. Please log in again.', 401));
+  }
+
   // 2. Verify token
   const decoded = jwt.verify(token, jwtConfig.secret, {
     issuer: jwtConfig.options.issuer,

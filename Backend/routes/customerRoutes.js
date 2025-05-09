@@ -15,6 +15,9 @@ router.use(
 // get all parent services
 router.get('/services/all/parents', customerController.getAllParentServices); 
 
+// Get all available services (new endpoint)
+router.get('/services/all', customerController.getAllServices);
+
 // get all services by category and radius
 router.get('/services/:service_name', customerController.getFilteredServices);
 

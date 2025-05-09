@@ -14,10 +14,14 @@ exports.register = catchAsync(async (req, res, next) => {
     password,
     phone_number,
     role,
+    address, // Assuming address is sent from frontend during registration
+    service: serviceName, // Renaming for clarity, this is the name of the service like "Bridal Makeup"
+    location_latitude, 
+    location_longitude,
   } = req.body;
 
   // Validate required fields
-  if (!name || !email || !password || !phone_number || !role) {
+  if (!name || !email || !password || !phone_number || !role || !address) { // Added address validation
     return next(new AppError('Please provide all required fields', 400));
   }
 
@@ -33,21 +37,83 @@ exports.register = catchAsync(async (req, res, next) => {
   }
 
   // Create new user
-  const newUser = await User.create({
+  const userPayload = {
     name,
     email,
     password,
     phone_number,
     role,
-  });
+    address, // Storing address on user model
+  };
+
+  // Default location if not provided or invalid
+  let userLocation = {
+    type: 'Point',
+    coordinates: [0, 0] // Default coordinates
+  };
+
+  if (location_latitude && location_longitude && !isNaN(parseFloat(location_latitude)) && !isNaN(parseFloat(location_longitude))) {
+    userLocation.coordinates = [parseFloat(location_longitude), parseFloat(location_latitude)];
+  }
+  userPayload.location = userLocation;
+
+  const newUser = await User.create(userPayload);
+
+  // If the new user is a provider and a service name was provided, create a service for them
+  if (newUser.role === 'provider' && serviceName) {
+    const Service = require('../models/Service'); // Import Service model
+    try {
+      await Service.create({
+        provider: newUser._id,
+        name: serviceName, // Use the service name selected during signup
+        description: `Default description for ${serviceName}`, // Placeholder
+        price: 0, // Placeholder price, provider should update this
+        address: newUser.address, // Use provider's address
+        location: newUser.location // Use provider's location
+      });
+      console.log(`Service '${serviceName}' created for provider ${newUser.email}`);
+    } catch (serviceError) {
+      console.error(`Error creating service for provider ${newUser.email}:`, serviceError);
+      // Decide if registration should fail if service creation fails.
+      // For now, we'll let user registration succeed even if service creation fails.
+      // You might want to return an error or implement a transaction.
+    }
+  }
 
   // Remove password from output
   newUser.password = undefined;
 
+  // Generate JWT token for the new user
+  const token = jwt.sign(
+    { id: newUser._id, role: newUser.role, email: newUser.email },
+    jwtConfig.secret,
+    {
+      expiresIn: jwtConfig.expiresIn,
+      issuer: jwtConfig.options.issuer,
+      audience: jwtConfig.options.audience,
+      algorithm: jwtConfig.options.algorithm
+    }
+  );
+
+  // Create a session for the new user
+  await Session.create({
+    user: newUser._id,
+    ip: req.ip,
+    userAgent: req.get('User-Agent')
+  });
+
+  // Send response with token and user data
   res.status(201).json({
     status: 'success',
     message: 'User registered successfully',
-    user_id: newUser._id
+    accessToken: token,
+    user: { // Return a user object similar to login
+      id: newUser._id,
+      name: newUser.name,
+      email: newUser.email,
+      role: newUser.role,
+      address: newUser.address // Include address if it's part of the user object you want to send
+    }
   });
 });
 
@@ -89,7 +155,6 @@ exports.login = catchAsync(async (req, res, next) => {
   // 5. Remove password from output
   user.password = undefined;
 
-  // 6. Send response with token
   res.status(200).json({
     status: 'success',
     message: 'Login successful',
