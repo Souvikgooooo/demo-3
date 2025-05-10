@@ -1,3 +1,4 @@
+const User = require('../models/User'); // Added User model
 const Service = require('../models/Service');
 const AppError = require('../utils/appError');
 const catchAsync = require('../utils/catchAsync');
@@ -80,6 +81,40 @@ exports.createService = catchAsync(async (req, res, next) => {
   });
 });
 
+exports.getProvidersByService = catchAsync(async (req, res, next) => {
+  const { serviceName } = req.params;
+
+  if (!serviceName) {
+    return next(new AppError('Please provide a service name.', 400));
+  }
+
+  // Find providers offering the specified service (case-insensitive match)
+  // Only select fields relevant for the customer to see (e.g., id and name)
+  const providers = await User.find({
+    role: 'provider',
+    service: { $regex: new RegExp(`^${serviceName}$`, 'i') } // Case-insensitive exact match
+  }).select('_id name'); // Adjust fields as necessary, e.g., add averageRating, profileImage if available
+
+  if (!providers || providers.length === 0) {
+    // It's not an error if no providers are found, just an empty list.
+    // Client can handle displaying "No providers available".
+    return res.status(200).json({
+      status: 'success',
+      results: 0,
+      data: {
+        providers: []
+      }
+    });
+  }
+
+  res.status(200).json({
+    status: 'success',
+    results: providers.length,
+    data: {
+      providers
+    }
+  });
+});
 exports.updateService = catchAsync(async (req, res, next) => {
   const { id } = req.params;
   const {
@@ -364,4 +399,3 @@ exports.generateBill = catchAsync(async (req, res, next) => {
     payment_id: newPayment._id
   });
 });
-

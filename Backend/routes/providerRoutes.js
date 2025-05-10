@@ -4,7 +4,14 @@ const authMiddleware = require('../middlewares/auth');
 
 const router = express.Router();
 
-// Protect all routes after this middleware
+// Route for customers to find providers by service (requires general authentication)
+router.get(
+  '/by-service/:serviceName', 
+  authMiddleware.authenticate, // General authentication
+  providerController.getProvidersByService
+);
+
+// Protect all routes after this middleware for provider-specific actions
 router.use(
   authMiddleware.authenticate,
   authMiddleware.providerRoleAuthenticate

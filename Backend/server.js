@@ -15,6 +15,7 @@ app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/provider', require('./routes/providerRoutes'));
 app.use('/api/customer', require('./routes/customerRoutes'));
 app.use('/api/payment', require('./routes/paymentRoutes'));
+app.use('/api/service-requests', require('./routes/serviceRequestRoutes')); // Added service request routes
 
 // Error handling
 app.use(errorHandler);

@@ -1,13 +1,19 @@
-import React from 'react';
-import { useLocation, useNavigate } from 'react-router-dom'; // Added useNavigate
-import axios from 'axios'; // Added axios
-import { useUser } from '@/context/UserContext.tsx'; // Added useUser
-import { toast } from 'sonner'; // For success/error messages
+import React, { useState, useEffect } from 'react'; // Added useState, useEffect
+import { useLocation, useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import { useUser } from '@/context/UserContext.tsx';
+import { toast } from 'sonner';
 
 interface Service {
-  id: string; // Assuming service ID from backend is string, adjust if number
+  id: string;
   name: string;
   price: number;
+}
+
+interface Provider {
+  _id: string; // Changed from id to _id to match backend
+  name: string;
+  // Add other relevant provider details if needed, e.g., averageRating, specificPrice
 }
 
 interface FormData {
@@ -22,6 +28,10 @@ interface FormData {
 const BookServicePage: React.FC = () => {
   const location = useLocation();
   const { service } = location.state || {}; // Retrieve the service object from state
+
+  const [availableProviders, setAvailableProviders] = useState<Provider[]>([]);
+  const [selectedProviderId, setSelectedProviderId] = useState<string | null>(null);
+  const [providersLoading, setProvidersLoading] = useState<boolean>(false);
 
   if (!service) return <div>404 - Service Not Found</div>;
 
@@ -45,8 +55,59 @@ const BookServicePage: React.FC = () => {
   const { user } = useUser(); // Get current user for customerId
   const navigate = useNavigate(); // For redirection
 
+  // Fetch available providers when service changes
+  useEffect(() => {
+    if (service?.name) {
+      const fetchProviders = async () => {
+        setProvidersLoading(true);
+        try {
+          console.log(`Fetching providers for service: ${service.name}`);
+          const response = await axios.get(`http://localhost:8000/api/provider/by-service/${encodeURIComponent(service.name)}`, {
+            headers: {
+              Authorization: `Bearer ${user?.accessToken}`, 
+            },
+          });
+          if (response.data && response.data.data && Array.isArray(response.data.data.providers)) {
+            // Backend sends { _id, name }, map to what frontend might expect if it used 'id'
+            // However, we changed Provider interface to use _id, so direct assignment is fine.
+            setAvailableProviders(response.data.data.providers);
+          } else {
+            setAvailableProviders([]);
+            console.warn("Unexpected response structure for providers or no providers found:", response.data);
+          }
+          setProvidersLoading(false); // Ensure loading is set to false after success
+        } catch (error) {
+          console.error('Failed to fetch providers:', error);
+          setAvailableProviders([]); 
+          toast.error('Could not load available providers.');
+          setProvidersLoading(false);
+        }
+      };
+      // Ensure user context is loaded before fetching, or handle user being null
+      if (user?.accessToken) { // Only fetch if user token is available
+        fetchProviders();
+      } else if (user === null) { // User context loaded, but no user (not logged in)
+        toast.error("Please log in to see available providers.");
+        setProvidersLoading(false);
+      }
+      // If user is undefined, UserContext is still loading, useEffect will re-run when user changes.
+    } else {
+        setProvidersLoading(false); // If no service.name, not loading.
+    }
+  }, [service, user]); // Added user to dependency array
+
+  const handleProviderChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setSelectedProviderId(e.target.value);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!selectedProviderId) {
+      toast.error("Please select a service provider.");
+      return;
+    }
+
     if (!user || !service) {
       toast.error("User or service details are missing. Cannot proceed.");
       return;
@@ -65,10 +126,9 @@ const BookServicePage: React.FC = () => {
       return;
     }
 
-    // Using user.name as customerId as per user request
-    // Ensure user.name is populated and is the intended identifier
-    if (!user.name) {
-      toast.error("Username is missing. Cannot proceed with booking.");
+    // Ensure user._id is available and use it as customerId
+    if (!user._id) {
+      toast.error("Customer ID is missing. Cannot proceed with booking.");
       return;
     }
 
@@ -76,35 +136,36 @@ const BookServicePage: React.FC = () => {
     const time_slot = `${formData.date}T${formData.time}:00`; // Assuming time is in HH:MM format
 
     const bookingPayload = {
-      customerId: user.name,  // Using user.name as customerId
-      service_id: service.id, // Changed from serviceId to service_id
+      customerId: user._id, // Using user._id as customerId
+      providerId: selectedProviderId,
+      service_id: service.id,
       serviceName: service.name,
       servicePrice: service.price,
-      customerName: formData.customerName, // This might be redundant if user.name is preferred
+      customerName: formData.customerName,
       customerPhoneNumber: formData.phoneNumber,
       customerAddress: formData.address,
       nearestPoint: formData.nearestPoint,
       time_slot: time_slot, // Combined date and time
-      status: 'Booked', // Initial status
+      status: 'Pending', // Initial status, provider needs to accept
     };
 
     console.log('Submitting Booking Details:', bookingPayload);
 
     try {
-      // Corrected API endpoint based on backend route definitions
-      const response = await axios.post('http://localhost:8000/api/customer/services/request', bookingPayload, {
+      // TODO: Update API endpoint to the new service request endpoint
+      // Example: 'http://localhost:8000/api/service-requests'
+      const response = await axios.post('http://localhost:8000/api/service-requests', bookingPayload, {
         headers: {
-          // Assuming you need to send an auth token if your API is protected
-          Authorization: `Bearer ${user.accessToken}`, 
+          Authorization: `Bearer ${user.accessToken}`,
         },
       });
       
-      console.log('Booking successful:', response.data);
-      toast.success('Booking successful! Your service is now "Already Booked".');
-      // Navigate to orders page, potentially passing some identifier of the new booking
-      navigate('/customer/orders', { state: { newBookingId: response.data?.serviceRequest?._id || null } }); 
+      console.log('Service request successful:', response.data);
+      toast.success('Service request sent successfully! You will be notified upon confirmation.');
+      // Navigate to a confirmation page or orders page
+      navigate('/customer/orders', { state: { newServiceRequestId: response.data?.serviceRequest?._id || null } });
     } catch (error) {
-      console.error('Booking failed:', error);
+      console.error('Service request failed:', error);
       let errorMessage = 'Booking failed. Please try again.';
       if (axios.isAxiosError(error) && error.response?.data?.message) {
         errorMessage = error.response.data.message;
@@ -139,6 +200,33 @@ const BookServicePage: React.FC = () => {
 
         {/* Booking Form */}
         <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Provider Selection Dropdown */}
+          <div>
+            <label htmlFor="provider" className="block text-sm font-medium text-gray-700 mb-1">Select Service Provider</label>
+            <select
+              id="provider"
+              name="provider"
+              value={selectedProviderId || ''}
+              onChange={handleProviderChange}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition duration-150"
+              required
+              disabled={providersLoading || availableProviders.length === 0}
+            >
+              <option value="" disabled>
+                {providersLoading ? 'Loading providers...' : (availableProviders.length === 0 && service?.name ? 'No providers available for this service' : 'Select a provider')}
+              </option>
+              {availableProviders.map((provider) => (
+                <option key={provider._id} value={provider._id}> {/* Use provider._id for key and value */}
+                  {provider.name}
+                </option>
+              ))}
+            </select>
+            {providersLoading && <p className="text-xs text-gray-500 mt-1">Fetching providers...</p>}
+            {!providersLoading && availableProviders.length === 0 && service?.name && (
+              <p className="text-xs text-red-500 mt-1">Currently, no providers are listed for {service.name}. Please check back later.</p>
+            )}
+          </div>
+
           <div>
             <label htmlFor="customerName" className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
             <input
