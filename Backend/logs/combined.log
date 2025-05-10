@@ -480,3 +480,5 @@
 {"level":"info","message":"MongoDB connection established","timestamp":"2025-05-10T09:24:39.387Z"}
 {"level":"info","message":"MongoDB connection established","timestamp":"2025-05-10T09:24:45.484Z"}
 {"level":"info","message":"MongoDB connection established","timestamp":"2025-05-10T09:24:59.776Z"}
+{"level":"info","message":"MongoDB connection established","timestamp":"2025-05-10T09:25:23.051Z"}
+{"isOperational":true,"level":"error","message":"Incorrect email or password","stack":"Error: Incorrect email or password\n    at D:\\clone\\demo-3\\Backend\\controllers\\authController.js:154:17","status":"error","statusCode":401,"timestamp":"2025-05-10T09:44:47.586Z"}
