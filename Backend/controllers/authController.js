@@ -163,7 +163,10 @@ exports.login = catchAsync(async (req, res, next) => {
       id: user._id,
       name: user.name,
       email: user.email,
-      role: user.role
+      role: user.role,
+      phone_number: user.phone_number, // Add phone_number
+      address: user.address,           // Add address
+      location: user.location          // Add location
     }
   });
 });

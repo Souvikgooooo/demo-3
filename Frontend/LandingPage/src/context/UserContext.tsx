@@ -10,8 +10,11 @@ interface User {
   type: 'customer' | 'serviceprovider'; // Frontend specific type derived from role
   createdAt?: string; // Added for signup date
   accessToken?: string; // If storing token in user object
-  // Add other user properties as needed, e.g., address
   address?: string; 
+  location?: {
+    type?: string;
+    coordinates?: number[];
+  };
 }
 
 // Define the context type

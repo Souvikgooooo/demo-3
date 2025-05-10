@@ -29,19 +29,22 @@ const userSchema = new mongoose.Schema({
   },
   passwordResetToken: String,
   passwordResetExpires: Date,
-  // location: { // Commented out to temporarily disable geolocation
-  //   type: {
-  //     type: String,
-  //     default: 'Point',
-  //     enum: ['Point']
-  //   },
-  //   coordinates: [Number]
-  // },
-  address: String
+  location: { 
+    type: {
+      type: String,
+      default: 'Point',
+      enum: ['Point']
+    },
+    coordinates: [Number] // [longitude, latitude]
+  },
+  address: {
+    type: String,
+    required: [true, 'Please enter your address']
+  }
 });
 
-// Geospatial index for location-based queries - Commented out
-// userSchema.index({ location: '2dsphere' });
+// Geospatial index for location-based queries
+userSchema.index({ location: '2dsphere' });
 
 // Password hashing middleware
 userSchema.pre('save', async function(next) {
