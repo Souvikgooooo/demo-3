@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom"; // Import Link for navigation
 import ReviewList from "../components/reviews/ReviewList";
 import ReviewStatsChart from "../components/reviews/ReviewStatsChart";
 import ReviewModal from "../components/reviews/ReviewModal";
@@ -76,9 +77,17 @@ const FeedbackAndReviews = () => {
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-6 text-center text-gray-800">
-        Customer Feedback & Reviews
-      </h1>
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold text-gray-800">
+          Customer Feedback & Reviews
+        </h1>
+        <Link
+          to="/" // Assuming '/' is the customer home page
+          className="bg-gray-200 text-gray-700 hover:bg-gray-300 px-4 py-2 rounded-md text-sm"
+        >
+          Close & Go to Home
+        </Link>
+      </div>
 
       {/* 📊 Chart */}
       <ReviewStatsChart reviews={reviews} />

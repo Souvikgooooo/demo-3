@@ -40,6 +40,19 @@ const userSchema = new mongoose.Schema({
   address: {
     type: String,
     required: [true, 'Please enter your address']
+  },
+  // Provider-specific fields
+  service: { // Primary service offered by the provider
+    type: String,
+    // required: function() { return this.role === 'provider'; } // Made optional at schema level
+  },
+  experience: { // E.g., "2 years", "5+ years"
+    type: String,
+    // required: function() { return this.role === 'provider'; } 
+  },
+  tradeLicense: { // E.g., License number or status
+    type: String,
+    // required: function() { return this.role === 'provider'; }
   }
 });
 

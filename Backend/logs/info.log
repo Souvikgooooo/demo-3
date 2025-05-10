@@ -461,3 +461,16 @@
 {"level":"info","message":"MongoDB connection established","timestamp":"2025-05-10T04:46:11.691Z"}
 {"level":"info","message":"MongoDB connection established","timestamp":"2025-05-10T04:46:43.039Z"}
 {"level":"info","message":"MongoDB connection established","timestamp":"2025-05-10T04:46:47.910Z"}
+{"level":"info","message":"MongoDB connection established","timestamp":"2025-05-10T06:05:48.258Z"}
+{"isOperational":true,"level":"error","message":"Incorrect email or password","stack":"Error: Incorrect email or password\n    at D:\\clone\\demo-3\\Backend\\controllers\\authController.js:133:17","status":"error","statusCode":401,"timestamp":"2025-05-10T06:13:06.486Z"}
+{"isOperational":true,"level":"error","message":"Incorrect email or password","stack":"Error: Incorrect email or password\n    at D:\\clone\\demo-3\\Backend\\controllers\\authController.js:133:17","status":"error","statusCode":401,"timestamp":"2025-05-10T06:13:09.091Z"}
+{"level":"info","message":"MongoDB connection established","timestamp":"2025-05-10T06:16:04.706Z"}
+{"level":"info","message":"MongoDB connection established","timestamp":"2025-05-10T06:16:30.550Z"}
+{"level":"info","message":"MongoDB connection established","timestamp":"2025-05-10T06:17:35.820Z"}
+{"level":"info","message":"MongoDB connection established","timestamp":"2025-05-10T06:19:16.704Z"}
+{"level":"info","message":"MongoDB connection established","timestamp":"2025-05-10T06:21:23.378Z"}
+{"level":"info","message":"MongoDB connection established","timestamp":"2025-05-10T06:21:47.335Z"}
+{"level":"info","message":"MongoDB connection established","timestamp":"2025-05-10T06:22:50.115Z"}
+{"level":"info","message":"MongoDB connection established","timestamp":"2025-05-10T08:54:07.689Z"}
+{"level":"info","message":"MongoDB connection established","timestamp":"2025-05-10T09:01:36.112Z"}
+{"level":"info","message":"MongoDB connection established","timestamp":"2025-05-10T09:01:41.797Z"}

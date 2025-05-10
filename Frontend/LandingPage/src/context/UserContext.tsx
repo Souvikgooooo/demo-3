@@ -15,6 +15,10 @@ interface User {
     type?: string;
     coordinates?: number[];
   };
+  // Provider-specific fields
+  service?: string;
+  experience?: string;
+  tradeLicense?: string;
 }
 
 // Define the context type

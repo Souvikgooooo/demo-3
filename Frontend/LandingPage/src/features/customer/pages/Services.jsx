@@ -197,14 +197,7 @@ const Services = () => {
     <Layout>
       <div className="page-container">
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">Manage Services</h1>
-          <button
-            onClick={handleAddService}
-            className="btn-primary flex items-center"
-          >
-            <Plus className="mr-2 h-5 w-5" />
-            Add Service
-          </button>
+          <h1 className="text-2xl font-bold text-gray-900">Services</h1>
         </div>
         <ServiceFilters
           searchQuery={searchQuery}
@@ -233,14 +226,8 @@ const Services = () => {
             <>
               {sortedServices.length === 0 ? (
                 <div className="py-20 text-center">
-                  <p className="text-xl text-gray-500 mb-4">No services found</p>
-                  <button
-                    onClick={handleAddService}
-                    className="inline-flex items-center px-4 py-2 bg-primary/10 text-primary rounded-md hover:bg-primary/20 transition-colors"
-                  >
-                    <Plus className="mr-2 h-5 w-5" />
-                    Add your first service
-                  </button>
+                  <p className="text-xl text-gray-500 mb-4">No services found at the moment.</p>
+                  {/* Add service button removed from here */}
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">

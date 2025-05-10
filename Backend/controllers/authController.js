@@ -15,7 +15,11 @@ exports.register = catchAsync(async (req, res, next) => {
     phone_number,
     role,
     address, // Assuming address is sent from frontend during registration
-    service: serviceName, // Renaming for clarity, this is the name of the service like "Bridal Makeup"
+    // Provider specific fields from signup
+    service, // This will now be the main service string for User model
+    experience,
+    tradeLicense,
+    // service: serviceName, // Keep original for separate Service model creation if needed, or adapt
     location_latitude, 
     location_longitude,
   } = req.body;
@@ -46,6 +50,13 @@ exports.register = catchAsync(async (req, res, next) => {
     address, // Storing address on user model
   };
 
+  // Add provider-specific fields if role is provider
+  if (role === 'provider') {
+    if (service) userPayload.service = service;
+    if (experience) userPayload.experience = experience;
+    if (tradeLicense) userPayload.tradeLicense = tradeLicense;
+  }
+
   // Default location if not provided or invalid
   let userLocation = {
     type: 'Point',
@@ -59,19 +70,21 @@ exports.register = catchAsync(async (req, res, next) => {
 
   const newUser = await User.create(userPayload);
 
-  // If the new user is a provider and a service name was provided, create a service for them
-  if (newUser.role === 'provider' && serviceName) {
+  // If the new user is a provider and a service name was provided (for the separate Service model), create a service for them
+  // Note: req.body.service is now used for User.service. If you have a different field for the Service model's name, adjust accordingly.
+  // For this example, let's assume req.body.service (now mapped to `service` variable) is also the name for the detailed Service entry.
+  if (newUser.role === 'provider' && newUser.service) { // Use newUser.service as it's now on the User model
     const Service = require('../models/Service'); // Import Service model
     try {
       await Service.create({
         provider: newUser._id,
-        name: serviceName, // Use the service name selected during signup
-        description: `Default description for ${serviceName}`, // Placeholder
+        name: newUser.service, // Use the service name from the User model
+        description: `Default description for ${newUser.service}`, // Placeholder
         price: 0, // Placeholder price, provider should update this
         address: newUser.address, // Use provider's address
         location: newUser.location // Use provider's location
       });
-      console.log(`Service '${serviceName}' created for provider ${newUser.email}`);
+      console.log(`Service '${newUser.service}' created for provider ${newUser.email}`);
     } catch (serviceError) {
       console.error(`Error creating service for provider ${newUser.email}:`, serviceError);
       // Decide if registration should fail if service creation fails.
@@ -107,12 +120,20 @@ exports.register = catchAsync(async (req, res, next) => {
     status: 'success',
     message: 'User registered successfully',
     accessToken: token,
-    user: { // Return a user object similar to login
+    user: {
       id: newUser._id,
       name: newUser.name,
       email: newUser.email,
       role: newUser.role,
-      address: newUser.address // Include address if it's part of the user object you want to send
+      phone_number: newUser.phone_number,
+      address: newUser.address,
+      location: newUser.location,
+      // Conditionally add provider-specific fields
+      ...(newUser.role === 'provider' && {
+        service: newUser.service,
+        experience: newUser.experience,
+        tradeLicense: newUser.tradeLicense,
+      }),
     }
   });
 });
@@ -164,9 +185,15 @@ exports.login = catchAsync(async (req, res, next) => {
       name: user.name,
       email: user.email,
       role: user.role,
-      phone_number: user.phone_number, // Add phone_number
-      address: user.address,           // Add address
-      location: user.location          // Add location
+      phone_number: user.phone_number,
+      address: user.address,
+      location: user.location,
+      // Conditionally add provider-specific fields
+      ...(user.role === 'provider' && {
+        service: user.service || 'N/A',
+        experience: user.experience || 'N/A',
+        tradeLicense: user.tradeLicense || 'N/A',
+      }),
     }
   });
 });
